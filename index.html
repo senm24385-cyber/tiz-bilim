@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="tk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Tiz Bilim</title>
+  <style>
+    body {
+      margin:0;
+      font-family:sans-serif;
+      background:#0f172a;
+      color:white;
+      display:flex;
+      flex-direction:column;
+      height:100vh;
+    }
+    #chat {
+      flex:1;
+      overflow:auto;
+      padding:10px;
+    }
+    .msg {
+      margin:5px 0;
+      padding:10px;
+      border-radius:10px;
+    }
+    .user { background:#1e293b; }
+    .ai { background:#334155; }
+    #controls {
+      padding:10px;
+      display:flex;
+      justify-content:center;
+      gap:10px;
+    }
+    button {
+      padding:15px;
+      border:none;
+      border-radius:50%;
+      background:#22c55e;
+      color:white;
+      font-size:18px;
+    }
+    #time {
+      text-align:center;
+      padding:5px;
+    }
+    #modal {
+      position:fixed;
+      top:0;left:0;
+      width:100%;height:100%;
+      background:rgba(0,0,0,0.8);
+      display:none;
+      justify-content:center;
+      align-items:center;
+    }
+    #modal div {
+      background:#1e293b;
+      padding:20px;
+      border-radius:10px;
+      text-align:center;
+    }
+  </style>
+</head>
+<body>
+
+<div id="time"></div>
+<div id="chat"></div>
+
+<div id="controls">
+  <button onclick="start()">🎤</button>
+</div>
+
+<div id="modal">
+  <div>
+    <h2>Günüň mugt limiti gutardy</h2>
+    <button onclick="upgrade()">Premium al (3 manat)</button>
+  </div>
+</div>
+
+<script>
+let chat = document.getElementById("chat");
+let timeBox = document.getElementById("time");
+let modal = document.getElementById("modal");
+
+let data = JSON.parse(localStorage.getItem("tizbilim")) || {
+  time:0,
+  date:new Date().toDateString(),
+  premium:false
+};
+
+function save(){ localStorage.setItem("tizbilim", JSON.stringify(data)); }
+
+function resetCheck(){
+  let today = new Date().toDateString();
+  if(data.date !== today){
+    data.time = 0;
+    data.date = today;
+    save();
+  }
+}
+
+function updateTime(){
+  let left = data.premium ? "∞" : Math.max(0, 15 - data.time);
+  timeBox.innerText = "Galan wagt: " + left + " min";
+}
+
+resetCheck();
+updateTime();
+
+function start(){
+  if(!data.premium && data.time >= 15){
+    modal.style.display="flex";
+    return;
+  }
+
+  let text = prompt("Soragyňy ýaz:");
+  if(!text) return;
+
+  addMsg(text,"user");
+
+  data.time += 1;
+  save();
+  updateTime();
+
+  let response = teacher(text);
+  addMsg(response,"ai");
+
+  speak(response);
+}
+
+function addMsg(t,cls){
+  let div=document.createElement("div");
+  div.className="msg "+cls;
+  div.innerText=t;
+  chat.appendChild(div);
+  chat.scrollTop=chat.scrollHeight;
+}
+
+function teacher(input){
+  return "Düşündiriş: "+input+
+  "\n\nMysal 1: gündelik durmuşdan"+
+  "\nMysal 2: başga ýagdaý"+
+  "\n\nSorag: Düşündiňmi?";
+}
+
+function speak(text){
+  let u = new SpeechSynthesisUtterance(text);
+  u.lang="tr-TR";
+  speechSynthesis.speak(u);
+}
+
+function upgrade(){
+  data.premium = true;
+  save();
+  modal.style.display="none";
+  updateTime();
+}
+</script>
+
+</body>
+</html>
