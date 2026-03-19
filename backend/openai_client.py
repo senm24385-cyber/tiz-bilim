@@ -1,31 +1,36 @@
 import openai
+import base64
 
 class OpenAIClient:
-    def __init__(self, api_key):
-        self.api_key = api_key
+    def __init__(self):
+        self.api_key = "YOUR_API_KEY"
         openai.api_key = self.api_key
 
-    def text_to_speech(self, text, voice='en-US-Wavenet-D'):
-        """Convert text to speech using OpenAI API."""
-        response = openai.Audio.create(
-            model="text-to-speech",
-            input=text,
-            voice=voice
-        )
-        return response['audio_url']
-
-    def speech_to_text(self, audio_file):
-        """Convert speech to text using OpenAI API with mock support."""
-        if self.is_demo_mode():
-            return "This is a mock transcription for demo purposes."
-        response = openai.Audio.transcribe(
-            model="whisper-1",
-            file=audio_file
-        )
+    def speech_to_text(self, audio_file_path):
+        with open(audio_file_path, "rb") as audio_file:
+            audio_content = base64.b64encode(audio_file.read()).decode('utf-8')
+        response = openai.Audio.transcribe(model="whisper-1", file=audio_content)
         return response['text']
 
-    def is_demo_mode(self):
-        """Check if the application is in demo mode."""
-        # This can be replaced with actual demo mode logic
-        return True  # For demonstration, we always return True
+    def text_to_speech(self, text):
+        response = openai.Audio.create(text=text, voice="text-to-speech")
+        audio_content = base64.b64encode(response['audio']).decode('utf-8')
+        return audio_content
 
+    def get_learned_response(self, prompt):
+        response = openai.ChatCompletion.create(
+            model="gpt-4",
+            messages=[{"role": "user", "content": prompt}]
+        )
+        return response['choices'][0]['message']['content']
+
+    def remember_response(self, memory_key, response):
+        # Here you may want to implement the logic to inject the memory into the model
+        pass
+
+    
+# Example usage:
+# client = OpenAIClient()
+# print(client.speech_to_text("path/to/audio/file.wav"))
+# print(client.text_to_speech("Hello, world!"))
+# print(client.get_learned_response("What is the capital of France?"))
